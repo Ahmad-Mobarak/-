@@ -67,7 +67,9 @@
     .card-cta{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:20px; padding-top:15px; border-top:1px solid #24304b}
     .vote-grid{display:grid; gap:10px; grid-template-columns:repeat(auto-fit, minmax(240px,1fr))}
     .options{display:grid; gap:10px; grid-template-columns:repeat(auto-fit, minmax(160px,1fr))}
-    .option-btn{padding:12px; text-align:center}
+    .option-btn{padding:12px; text-align:center; transition:all 0.2s}
+    .option-btn.selected{background:var(--accent); color:#000; border-color:var(--accent); transform:scale(1.05)}
+    .option-btn:hover{transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.2)}
     .sep{height:1px; background:#24304b; margin:10px 0}
     .hint{color:#b7c2e8; font-size:.9rem}
     .kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#0c1222; border:1px solid #24314e; padding:2px 6px; border-radius:6px}
@@ -669,20 +671,28 @@
       state.players.forEach((p,i)=>{
         const box = document.createElement('div'); box.className='card';
         const title = document.createElement('div'); title.innerHTML = `<strong>${p.name}</strong> يصوّت لـ:`;
-        const sel = document.createElement('select');
-        const def = document.createElement('option'); def.value=''; def.textContent='اختر لاعباً';
-        sel.appendChild(def);
+        
+        // إنشاء أزرار الاختيار بدلاً من dropdown
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'options';
+        
         state.players.forEach((q,j)=>{
           if(i===j) return; // منع التصويت للنفس
-          const opt = document.createElement('option');
-          opt.value = j; opt.textContent = q.name;
-          sel.appendChild(opt);
+          const btn = document.createElement('button');
+          btn.className = 'option-btn';
+          btn.textContent = q.name;
+          btn.onclick = ()=>{
+            // إزالة التحديد من الأزرار الأخرى
+            optionsContainer.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+            // تحديد الزر المختار
+            btn.classList.add('selected');
+            state.votes[i] = j;
+            updateVoteProgress();
+          };
+          optionsContainer.appendChild(btn);
         });
-        sel.onchange = ()=>{ 
-          state.votes[i] = sel.value ? parseInt(sel.value,10) : undefined; 
-          updateVoteProgress();
-        };
-        box.append(title, sel);
+        
+        box.append(title, optionsContainer);
         el.voteGrid.appendChild(box);
       });
     }
