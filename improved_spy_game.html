@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>برا السالفة - لعبة جماعية</title>
+  <style>
+    :root{
+      --bg:#0f1320; --card:#171c2b; --muted:#8892a6; --text:#e8ecf7; --accent:#5be2a8; --accent-2:#7aa5ff; --danger:#ff6b6b; --warning:#ffd166; --success:#00d4aa;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans Arabic", Arial, sans-serif;
+      background:linear-gradient(120deg,#0e111a,#12182a 40%,#0f1320); color:var(--text);
+    }
+    h1,h2,h3{margin:0 0 .5rem}
+    h1{font-size:1.6rem}
+    h2{font-size:1.2rem; color:#dbe4ff}
+    h3{font-size:1.05rem; color:#cbd5ff}
+    .container{max-width:980px; margin:0 auto; padding:20px}
+    .grid{display:grid; gap:14px}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .card{
+      background:linear-gradient(180deg, #171c2b, #151a28); border:1px solid #24304b;
+      border-radius:14px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+    label{font-size:.92rem; color:#c9d2ea}
+    input, select, button, textarea{
+      background:#0e1424; color:var(--text); border:1px solid #263350;
+      border-radius:10px; padding:10px 12px; font-size:1rem; outline: none;
+    }
+    input::placeholder{color:#9aa3bb}
+    button{
+      background:linear-gradient(180deg,#1d2742,#19223a); cursor:pointer; transition:.2s;
+    }
+    button:hover{transform:translateY(-1px); box-shadow:0 6px 20px rgba(91,226,168,.15)}
+    button:disabled{opacity:0.5; cursor:not-allowed; transform:none}
+    .primary{border-color:#2b6; background:linear-gradient(180deg,#1f3f35,#153b2f); color:#dffcf0}
+    .accent{border-color:#355bd6; background:linear-gradient(180deg,#21315d,#1a2a55)}
+    .danger{border-color:#8e2d2d; background:linear-gradient(180deg,#3a1c1c,#321818)}
+    .success{border-color:#00b894; background:linear-gradient(180deg,#1a4040,#164037)}
+    .muted{opacity:.8}
+    .pill{
+      display:inline-flex; align-items:center; gap:8px; background:#0f1830; border:1px solid #263350;
+      padding:8px 12px; border-radius:999px; color:#cdd6f6; font-size:.92rem;
+    }
+    .tag{display:inline-block; padding:4px 10px; border-radius:999px; background:#172140; border:1px solid #2a3960; color:#a9b6dd; font-size:.85rem}
+    .list{display:flex; flex-wrap:wrap; gap:8px}
+    .players{display:flex; flex-wrap:wrap; gap:10px}
+    .player{
+      background:#0f1a33; border:1px solid #263350; padding:8px 12px; border-radius:10px; display:flex; align-items:center; gap:8px
+    }
+    .player .score{color:#a6ffcf; font-weight:600}
+    .hidden{display:none!important}
+    .center{text-align:center}
+    .big{font-size:1.15rem}
+    .xl{font-size:1.6rem}
+    .badge{padding:4px 8px; border-radius:8px; background:#0e1b36; border:1px solid #2c3a60; color:#c6d4ff; font-size:.85rem}
+    .steps{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px}
+    .step{
+      padding:8px 10px; border-radius:8px; background:#10182b; border:1px solid #293a5e; color:#c9d8ff; font-size:.9rem; transition:all 0.3s
+    }
+    .step.active{border-color:var(--accent); color:#d6fff0; background:#11302a}
+    .step.completed{border-color:var(--success); color:#d6fff0; background:#0a3d2a}
+    .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+    @media (max-width:800px){ .grid-2{grid-template-columns:1fr} }
+    .card-cta{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:20px; padding-top:15px; border-top:1px solid #24304b}
+    .vote-grid{display:grid; gap:10px; grid-template-columns:repeat(auto-fit, minmax(240px,1fr))}
+    .options{display:grid; gap:10px; grid-template-columns:repeat(auto-fit, minmax(160px,1fr))}
+    .option-btn{padding:12px; text-align:center}
+    .sep{height:1px; background:#24304b; margin:10px 0}
+    .hint{color:#b7c2e8; font-size:.9rem}
+    .kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#0c1222; border:1px solid #24314e; padding:2px 6px; border-radius:6px}
+    
+    /* جديد: تحسينات التفاعل */
+    .quick-actions{display:flex; gap:8px; margin:15px 0; flex-wrap:wrap; justify-content:center}
+    .quick-btn{padding:8px 12px; font-size:0.9rem; border-radius:8px; transition:all 0.2s}
+    .quick-btn:hover{transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+    .timer{color:var(--warning); font-weight:600}
+    .progress-bar{height:4px; background:#1a2742; border-radius:2px; overflow:hidden; margin:10px 0}
+    .progress-fill{height:100%; background:var(--accent); transition:width 0.3s}
+    .pulse{animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1} 50%{opacity:0.7}}
+    .notification{padding:10px; border-radius:8px; margin:10px 0; border:1px solid}
+    .notification.info{background:#0e1b36; border-color:#2c3a60; color:#c6d4ff}
+    .notification.success{background:#0a3d2a; border-color:#00b894; color:#d6fff0}
+    .notification.warning{background:#3d2a0a; border-color:#ffd166; color:#fff6d6}
+    
+    /* تحسينات المحتوى */
+    .game-stats{display:flex; gap:15px; flex-wrap:wrap; margin:10px 0}
+    .stat{text-align:center}
+    .stat-value{font-size:1.2rem; font-weight:700; color:var(--accent)}
+    .stat-label{font-size:0.8rem; color:var(--muted); margin-top:2px}
+    
+    .turn-indicator{
+      padding:12px; border-radius:10px; background:linear-gradient(135deg, #1a4040, #164037);
+      border:2px solid var(--success); margin:10px 0; text-align:center
+    }
+    .turn-player-name{font-size:1.3rem; font-weight:700; color:#d6fff0}
+    
+    .voting-summary{margin:15px 0; padding:10px; background:#0a1a33; border-radius:8px; border:1px solid #2c4a60}
+  </style>
+</head>
+<body>
+  <div class="container grid">
+    <div class="steps">
+      <span class="step" id="s1">1) اللاعبين</span>
+      <span class="step" id="s2">2) الإعداد</span>
+      <span class="step" id="s3">3) البطاقات</span>
+      <span class="step" id="s4">4) اللعب</span>
+      <span class="step" id="s5">5) التصويت</span>
+      <span class="step" id="s6">6) النتائج</span>
+    </div>
+
+    <div class="card">
+      <h1>برا السالفة — لعبة اجتماعية</h1>
+      <div class="hint">أضف اللاعبين، اختر فئة، وزّع البطاقات سراً، العب ثم صوّتوا. كل تخمين صحيح +10 نقاط، و"برا السالفة" يحصل على +10 إن خمّن الموضوع.</div>
+      
+      <!-- إحصائيات سريعة -->
+      <div class="game-stats hidden" id="gameStats">
+        <div class="stat">
+          <div class="stat-value" id="totalRounds">0</div>
+          <div class="stat-label">جولات مكتملة</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="totalPlayers">0</div>
+          <div class="stat-label">لاعبين</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="avgScore">0</div>
+          <div class="stat-label">متوسط النقاط</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section: Players -->
+    <section id="sec-players" class="card grid">
+      <h2>إضافة اللاعبين</h2>
+      
+      <!-- إضافة لاعب جديد -->
+      <div class="row">
+        <input id="playerName" placeholder="اكتب اسم اللاعب" />
+        <button class="primary" id="addPlayerBtn">إضافة</button>
+      </div>
+      
+      <div class="hint">الحد الأدنى: 3 لاعبين.</div>
+      
+      <!-- قائمة اللاعبين -->
+      <div class="players" id="playersList"></div>
+      
+      <!-- أزرار التحكم -->
+      <div class="sep"></div>
+      <div class="quick-actions">
+        <button class="quick-btn accent" id="shufflePlayersBtn">ترتيب عشوائي</button>
+        <button class="quick-btn" id="add4PlayersBtn">إضافة 4 لاعبين تجريبيين</button>
+        <button class="quick-btn danger" id="resetAllBtn">إعادة ضبط الكل</button>
+      </div>
+      
+      <!-- زر بدء اللعبة -->
+      <div class="card-cta">
+        <button class="primary" id="startGameBtn" disabled>بدء اللعبة</button>
+      </div>
+    </section>
+
+    <!-- Section: Setup -->
+    <section id="sec-setup" class="card grid hidden">
+      <h2>إعداد الجولة</h2>
+      
+      <!-- الإعدادات الأساسية -->
+      <div class="grid-2">
+        <div class="grid">
+          <label for="categorySel">اختر الفئة</label>
+          <select id="categorySel"></select>
+          <div class="hint">سيتم اختيار كلمة عشوائية من الفئة المختارة لكل جولة.</div>
+        </div>
+        <div class="grid">
+          <label>وضع اللعب</label>
+          <div class="row">
+            <label class="pill"><input type="radio" name="mode" value="info" checked/> وضع المعلومات</label>
+            <label class="pill"><input type="radio" name="mode" value="q"/> وضع الأسئلة</label>
+          </div>
+        </div>
+      </div>
+      
+      <!-- إعدادات اللعب -->
+      <div class="grid-2">
+        <div class="grid">
+          <label for="laps">عدد اللفات</label>
+          <input id="laps" type="number" min="1" max="10" value="3"/>
+          <div class="hint">كل اللاعبين يتكلمون مرة في اللفة</div>
+        </div>
+        <div class="grid">
+          <label for="startFirst">من يبدأ أولاً؟</label>
+          <select id="startFirst"></select>
+          <div class="hint">يمكن تغييره كل جولة للتوازن</div>
+        </div>
+      </div>
+      
+      <!-- أزرار التحكم -->
+      <div class="card-cta">
+        <button class="accent" id="backToPlayersBtn">العودة للاعبين</button>
+        <button class="primary" id="startRoundBtn">بدء الجولة</button>
+      </div>
+    </section>
+
+    <!-- Section: Reveal Cards -->
+    <section id="sec-reveal" class="card grid hidden">
+      <h2>توزيع البطاقات سراً</h2>
+      <div class="hint">مرّر الجهاز لكل لاعب بالترتيب. اضغط "إظهار بطاقتي" ثم "إخفاء وتمرير".</div>
+      
+      <!-- مؤشر التقدم -->
+      <div class="progress-bar">
+        <div class="progress-fill" id="revealProgress"></div>
+      </div>
+      <div class="hint center">اللاعب <span id="revealCounter">1</span> من <span id="revealTotal">4</span></div>
+      
+      <div class="card center" id="revealCard" style="background:linear-gradient(180deg,#1a2237,#11182b)">
+        <div id="revealBody" class="grid">
+          <!-- dynamic -->
+        </div>
+      </div>
+      <div class="card-cta">
+        <button class="accent hidden" id="goPlayBtn">ابدأ اللعب</button>
+        <button class="muted" id="skipRevealBtn">تخطي (للاختبار)</button>
+      </div>
+    </section>
+
+    <!-- Section: Play -->
+    <section id="sec-play" class="card grid hidden">
+      <div class="row" style="justify-content:space-between; align-items:center">
+        <h2>العب</h2>
+        <span class="badge" id="modeBadge"></span>
+      </div>
+      
+      <!-- مؤشر الدور الحالي -->
+      <div class="turn-indicator">
+        <div class="turn-player-name" id="turnPlayerName">—</div>
+        <div class="hint">حان دورك!</div>
+      </div>
+      
+      <div class="grid">
+        <div class="row" style="gap:12px">
+          <span class="tag" id="catTag"></span>
+          <span class="tag">اللفة <span id="lapNow">1</span> / <span id="lapTotal">3</span></span>
+          <span class="tag">التقدم: <span id="turnProgress">1/12</span></span>
+        </div>
+        
+        <!-- شريط التقدم -->
+        <div class="progress-bar">
+          <div class="progress-fill" id="playProgress"></div>
+        </div>
+        
+        <div class="sep"></div>
+        <div class="row">
+          <button id="prevTurnBtn">◀ السابق</button>
+          <button class="primary" id="nextTurnBtn">التالي ▶</button>
+          <button class="accent" id="endNowBtn">إنهاء الجولة الآن</button>
+        </div>
+        <div class="hint" id="modeHint"></div>
+      </div>
+    </section>
+
+    <!-- Section: Voting -->
+    <section id="sec-vote" class="card grid hidden">
+      <h2>التصويت: من برا السالفة؟</h2>
+      <div class="hint">كل لاعب يصوت لمن يعتقد أنه "برا السالفة"</div>
+      
+      <!-- ملخص سريع للتصويت -->
+      <div class="voting-summary">
+        <div class="hint">تم التصويت: <span id="votedCount">0</span> من <span id="totalVoters">4</span></div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="voteProgress"></div>
+        </div>
+      </div>
+      
+      <div class="vote-grid" id="voteGrid"></div>
+      <div class="card-cta">
+        <button class="primary" id="submitVotesBtn" disabled>تأكيد الأصوات</button>
+      </div>
+    </section>
+
+    <!-- Section: Spy Guess -->
+    <section id="sec-spy-guess" class="card grid hidden">
+      <h2>اختيارات "برا السالفة"</h2>
+      <div id="spyNameBox" class="hint"></div>
+      <div class="notification info">
+        اختر الموضوع الصحيح لتحصل على 10 نقاط إضافية!
+      </div>
+      <div class="grid">
+        <div class="options" id="spyOptions"></div>
+      </div>
+    </section>
+
+    <!-- Section: Results -->
+    <section id="sec-results" class="card grid hidden">
+      <h2>النتائج والنقاط</h2>
+      <div id="roundSummary" class="grid"></div>
+      <div class="sep"></div>
+      <h3>لوحة النقاط</h3>
+      <div id="scoreBoard" class="players"></div>
+      <div class="card-cta">
+        <button class="accent" id="newRoundBtn">جولة جديدة</button>
+        <button class="danger" id="resetScoresBtn">تصفير النقاط</button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <div class="card center">
+      <div class="hint">نصيحة: في وضع الأسئلة، اسأل أسئلة ليست مباشرة جداً حتى لا تكشف الكلمة بسرعة.</div>
+      <div class="hint" style="margin-top:8px; font-size:0.8rem; opacity:0.7">
+        💡 للاختبار السريع: استخدم "إضافة 4 لاعبين تجريبيين" و "تخطي" في قسم البطاقات
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==== بيانات الفئات ====
+    const CATEGORIES = {
+      "أكلات": ["بيتزا","كبسة","كشري","شاورما","مقلوبة","ملوخية","فلافل","سوشي","برجر","باستا","ماندي","محشي","فتوش","تبولة","برياني"],
+      "حيوانات": ["أسد","نمر","فيل","زرافة","دلفين","قطة","كلب","نسر","بطريق","كنغر","بومة","ثعلب","دب قطبي","حوت","قرد"],
+      "ملابس": ["قميص","بنطال","جاكيت","حذاء","قبعة","فستان","شال","جوارب","بدلة","عباية","حزام","نظارة شمس","تنورة","بلوزة","بيجامة"],
+      "مشروبات": ["قهوة","شاي","عصير برتقال","ليمونادة","حليب","مياه غازية","قهوة عربية","نسكافيه","عصير مانجو","سموثي","كاكاو","شاي أخضر","شاي مثلج","سحلب","موهيتو (بدون كحول)"],
+      "شركات سيارات": ["مرسيدس","بي إم دبليو","تويوتا","هوندا","فورد","هيونداي","كيا","تسلا","أودي","فولكسفاغن","بورشه","رينو","نيسان","شيفروليه","مازدا"]
+    };
+
+    // ==== الحالة العامة ====
+    const state = {
+      players: [],           
+      order: [],             
+      startIndex: 0,         
+      category: null,
+      word: null,
+      spyIndex: null,        
+      laps: 3,
+      mode: "info",
+      revealIndex: 0,
+      currentLap: 1,
+      turnPtr: 0,            
+      votes: {},             
+      spyOptions: [],        
+      roundActive: false,
+      completedSteps: [],
+      totalRounds: 0,
+    };
+
+    // ==== عناصر DOM ====
+    const el = {
+      steps: [document.getElementById('s1'),document.getElementById('s2'),document.getElementById('s3'),document.getElementById('s4'),document.getElementById('s5'),document.getElementById('s6')],
+      gameStats: document.getElementById('gameStats'),
+      totalRounds: document.getElementById('totalRounds'),
+      totalPlayers: document.getElementById('totalPlayers'),
+      avgScore: document.getElementById('avgScore'),
+      // Players
+      secPlayers: document.getElementById('sec-players'),
+      playerName: document.getElementById('playerName'),
+      addPlayerBtn: document.getElementById('addPlayerBtn'),
+      shufflePlayersBtn: document.getElementById('shufflePlayersBtn'),
+      add4PlayersBtn: document.getElementById('add4PlayersBtn'),
+      resetAllBtn: document.getElementById('resetAllBtn'),
+      playersList: document.getElementById('playersList'),
+      startGameBtn: document.getElementById('startGameBtn'),
+      // Setup
+      secSetup: document.getElementById('sec-setup'),
+      categorySel: document.getElementById('categorySel'),
+      startFirst: document.getElementById('startFirst'),
+      laps: document.getElementById('laps'),
+      startRoundBtn: document.getElementById('startRoundBtn'),
+      backToPlayersBtn: document.getElementById('backToPlayersBtn'),
+      // Reveal
+      secReveal: document.getElementById('sec-reveal'),
+      revealBody: document.getElementById('revealBody'),
+      revealProgress: document.getElementById('revealProgress'),
+      revealCounter: document.getElementById('revealCounter'),
+      revealTotal: document.getElementById('revealTotal'),
+      goPlayBtn: document.getElementById('goPlayBtn'),
+      skipRevealBtn: document.getElementById('skipRevealBtn'),
+      // Play
+      secPlay: document.getElementById('sec-play'),
+      modeBadge: document.getElementById('modeBadge'),
+      catTag: document.getElementById('catTag'),
+      lapNow: document.getElementById('lapNow'),
+      lapTotal: document.getElementById('lapTotal'),
+      turnPlayerName: document.getElementById('turnPlayerName'),
+      turnProgress: document.getElementById('turnProgress'),
+      playProgress: document.getElementById('playProgress'),
+      prevTurnBtn: document.getElementById('prevTurnBtn'),
+      nextTurnBtn: document.getElementById('nextTurnBtn'),
+      endNowBtn: document.getElementById('endNowBtn'),
+      modeHint: document.getElementById('modeHint'),
+      // Vote
+      secVote: document.getElementById('sec-vote'),
+      voteGrid: document.getElementById('voteGrid'),
+      votedCount: document.getElementById('votedCount'),
+      totalVoters: document.getElementById('totalVoters'),
+      voteProgress: document.getElementById('voteProgress'),
+      submitVotesBtn: document.getElementById('submitVotesBtn'),
+      // Spy guess
+      secSpyGuess: document.getElementById('sec-spy-guess'),
+      spyNameBox: document.getElementById('spyNameBox'),
+      spyOptions: document.getElementById('spyOptions'),
+      // Results
+      secResults: document.getElementById('sec-results'),
+      roundSummary: document.getElementById('roundSummary'),
+      scoreBoard: document.getElementById('scoreBoard'),
+      newRoundBtn: document.getElementById('newRoundBtn'),
+      resetScoresBtn: document.getElementById('resetScoresBtn')
+    };
+
+    // ==== أدوات ====
+    const rng = (n) => Math.floor(Math.random()*n);
+    const shuffle = (arr) => {
+      const a = arr.slice();
+      for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+      return a;
+    };
+
+    function saveLocal(){
+      const data = {
+        players: state.players, 
+        scores: state.players.map(p=>p.score||0),
+        totalRounds: state.totalRounds
+      };
+      localStorage.setItem('brasalfa_players', JSON.stringify(data));
+    }
+
+    function loadLocal(){
+      const raw = localStorage.getItem('brasalfa_players');
+      if(!raw) return;
+      try{
+        const data = JSON.parse(raw);
+        if(Array.isArray(data.players)){
+          state.players = data.players.map((p,i)=>({name:p.name, score: (data.scores && data.scores[i]) || p.score || 0}));
+          state.totalRounds = data.totalRounds || 0;
+        }
+      }catch{}
+    }
+
+    function setStep(active){
+      el.steps.forEach((s,i)=>{
+        s.classList.remove('active', 'completed');
+        if(i === active) s.classList.add('active');
+        else if(i < active) s.classList.add('completed');
+      });
+    }
+
+    function showSection(secId){
+      [el.secPlayers, el.secSetup, el.secReveal, el.secPlay, el.secVote, el.secSpyGuess, el.secResults].forEach(s=>s.classList.add('hidden'));
+      document.getElementById(secId).classList.remove('hidden');
+    }
+
+    function updateGameStats(){
+      if(state.players.length > 0){
+        el.gameStats.classList.remove('hidden');
+        el.totalRounds.textContent = state.totalRounds;
+        el.totalPlayers.textContent = state.players.length;
+        const avgScore = state.players.length > 0 ? 
+          Math.round(state.players.reduce((sum, p) => sum + (p.score || 0), 0) / state.players.length) : 0;
+        el.avgScore.textContent = avgScore;
+      } else {
+        el.gameStats.classList.add('hidden');
+      }
+    }
+
+    // ==== واجهة اللاعبين ====
+    function renderPlayers(){
+      el.playersList.innerHTML = '';
+      state.players.forEach((p,idx)=>{
+        const wrap = document.createElement('div'); wrap.className='player';
+        const nm = document.createElement('span'); nm.textContent = p.name;
+        const sc = document.createElement('span'); sc.className='score'; sc.textContent = `— ${p.score||0} نقطة`;
+        const del = document.createElement('button'); del.textContent='حذف'; del.onclick=()=>{ state.players.splice(idx,1); updatePlayersUI(); };
+        const up = document.createElement('button'); up.textContent='▲'; up.onclick=()=>{ if(idx>0){ [state.players[idx-1],state.players[idx]]=[state.players[idx],state.players[idx-1]]; updatePlayersUI(); } };
+        const down = document.createElement('button'); down.textContent='▼'; down.onclick=()=>{ if(idx<state.players.length-1){ [state.players[idx+1],state.players[idx]]=[state.players[idx],state.players[idx+1]]; updatePlayersUI(); } };
+        wrap.append(nm, sc, up, down, del);
+        el.playersList.appendChild(wrap);
+      });
+
+      // startFirst options
+      el.startFirst.innerHTML = '';
+      state.players.forEach((p,i)=>{
+        const opt = document.createElement('option');
+        opt.value = i; opt.textContent = p.name;
+        el.startFirst.appendChild(opt);
+      });
+      if(state.startIndex < state.players.length) el.startFirst.value = state.startIndex;
+      saveLocal();
+    }
+
+    function updatePlayersUI(){
+      renderPlayers();
+      refreshStartBtn();
+      populateCategorySel();
+      updateGameStats();
+    }
+
+    function refreshStartBtn(){
+      el.startRoundBtn.disabled = state.players.length < 3;
+      el.startGameBtn.disabled = state.players.length < 3;
+    }
+
+    function populateCategorySel(){
+      el.categorySel.innerHTML = '';
+      Object.keys(CATEGORIES).forEach((k,i)=>{
+        const opt = document.createElement('option'); opt.value = k; opt.textContent = k;
+        el.categorySel.appendChild(opt);
+      });
+      if(!state.category) state.category = Object.keys(CATEGORIES)[0];
+      el.categorySel.value = state.category;
+    }
+
+
+    // ==== بدء الجولة ====
+    function startRound(){
+      state.category = el.categorySel.value;
+      state.laps = Math.max(1, Math.min(10, parseInt(el.laps.value||'3',10)));
+      state.mode = [...document.querySelectorAll('input[name="mode"]')].find(r=>r.checked)?.value || 'info';
+      state.startIndex = parseInt(el.startFirst.value||'0',10) || 0;
+
+      // ترتيب الأدوار يبدأ من startIndex
+      const order = [];
+      for(let i=0;i<state.players.length;i++) order.push((state.startIndex + i) % state.players.length);
+      state.order = order;
+
+      // اختيار كلمة وجاسوس
+      const words = CATEGORIES[state.category] || [];
+      state.word = words.length ? words[rng(words.length)] : '—';
+      state.spyIndex = rng(state.players.length);
+
+      // تهيئة التوزيع
+      state.revealIndex = 0;
+      state.currentLap = 1;
+      state.turnPtr = 0;
+      state.votes = {};
+      state.roundActive = true;
+
+      // واجهة الكشف
+      renderReveal();
+      setStep(2); showSection('sec-reveal');
+    }
+
+    // ==== كشف البطاقات ====
+    function updateRevealProgress(){
+      const progress = (state.revealIndex / state.players.length) * 100;
+      el.revealProgress.style.width = progress + '%';
+      el.revealCounter.textContent = state.revealIndex + 1;
+      el.revealTotal.textContent = state.players.length;
+    }
+
+    function renderReveal(){
+      el.goPlayBtn.classList.add('hidden');
+      updateRevealProgress();
+      
+      const i = state.revealIndex;
+      const playerIdx = state.order[i];
+      const player = state.players[playerIdx];
+
+      el.revealBody.innerHTML = '';
+      const title = document.createElement('div'); title.className='xl'; title.textContent = `اللاعب: ${player.name}`;
+      const instr = document.createElement('div'); instr.className='hint'; instr.textContent = 'اضغط "إظهار بطاقتي" ثم أخفِها قبل تمرير الجهاز.';
+      const showBtn = document.createElement('button'); showBtn.className='primary'; showBtn.textContent='إظهار بطاقتي';
+
+      const cardBox = document.createElement('div'); cardBox.className='grid hidden';
+      const cat = document.createElement('div'); cat.className='tag'; cat.textContent = `الفئة: ${state.category}`;
+      const content = document.createElement('div'); content.className='big';
+      const isSpy = (playerIdx === state.spyIndex);
+      content.innerHTML = isSpy ? `<span style="color:#ffb4b4">أنت برا السالفة</span>` : `الكلمة: <span style="color:#a6ffcf; font-weight:700">${state.word}</span>`;
+      const hideBtn = document.createElement('button'); hideBtn.textContent='إخفاء وتمرير للجهاز';
+
+      showBtn.onclick = ()=>{ cardBox.classList.remove('hidden'); };
+      hideBtn.onclick = ()=>{
+        cardBox.classList.add('hidden');
+        state.revealIndex++;
+        if(state.revealIndex >= state.players.length){
+          // انتهى الجميع
+          el.revealBody.innerHTML = `<div class="center"><div class="xl">جميع اللاعبين شاهدوا بطاقاتهم.</div><div class="hint">ابدأوا اللعب.</div></div>`;
+          el.revealProgress.style.width = '100%';
+          el.goPlayBtn.classList.remove('hidden');
+        }else{
+          renderReveal();
+        }
+      };
+
+      cardBox.append(cat, content, hideBtn);
+      el.revealBody.append(title, instr, showBtn, cardBox);
+    }
+
+    // ==== واجهة اللعب ====
+    function updatePlayProgress(){
+      const totalTurns = state.players.length * state.laps;
+      const currentTurn = (state.currentLap - 1) * state.players.length + state.turnPtr + 1;
+      const progress = (currentTurn - 1) / totalTurns * 100;
+      el.playProgress.style.width = progress + '%';
+      el.turnProgress.textContent = `${currentTurn}/${totalTurns}`;
+    }
+
+    function renderPlay(){
+      el.modeBadge.textContent = (state.mode === 'info') ? 'وضع المعلومات' : 'وضع الأسئلة';
+      el.catTag.textContent = `الفئة: ${state.category}`;
+      el.lapNow.textContent = state.currentLap;
+      el.lapTotal.textContent = state.laps;
+
+      const currentPlayerIdx = state.order[state.turnPtr];
+      const currentPlayer = state.players[currentPlayerIdx];
+      el.turnPlayerName.textContent = currentPlayer.name;
+
+      updatePlayProgress();
+
+      el.modeHint.innerHTML = (state.mode==='info')
+        ? 'كل لاعب يذكر معلومة عن الكلمة بدون أن يفضحها مباشرة.'
+        : 'كل لاعب يوجه سؤالاً للاعب آخر له علاقة بالموضوع.';
+
+      el.prevTurnBtn.disabled = (state.currentLap===1 && state.turnPtr===0);
+    }
+
+    function advanceTurn(dir){
+      const n = state.players.length;
+      if(dir > 0){
+        state.turnPtr++;
+        if(state.turnPtr >= n){
+          state.turnPtr = 0;
+          state.currentLap++;
+          if(state.currentLap > state.laps){
+            // نهاية الجولة
+            openVoting();
+            return;
+          }
+        }
+      }else{
+        // رجوع
+        state.turnPtr--;
+        if(state.turnPtr < 0){
+          if(state.currentLap>1){
+            state.currentLap--;
+            state.turnPtr = n-1;
+          }else{
+            state.turnPtr = 0;
+          }
+        }
+      }
+      renderPlay();
+    }
+
+    // ==== التصويت ====
+    function updateVoteProgress(){
+      const voted = Object.keys(state.votes).length;
+      const total = state.players.length;
+      const progress = (voted / total) * 100;
+      el.voteProgress.style.width = progress + '%';
+      el.votedCount.textContent = voted;
+      el.totalVoters.textContent = total;
+      
+      // تفعيل/إلغاء تفعيل زر التأكيد
+      let allVoted = true;
+      for(let i = 0; i < state.players.length; i++){
+        if(state.votes[i] === undefined){
+          allVoted = false;
+          break;
+        }
+      }
+      el.submitVotesBtn.disabled = !allVoted;
+    }
+
+    function openVoting(){
+      setStep(4); showSection('sec-vote');
+      el.voteGrid.innerHTML = '';
+      state.votes = {};
+      updateVoteProgress();
+      
+      state.players.forEach((p,i)=>{
+        const box = document.createElement('div'); box.className='card';
+        const title = document.createElement('div'); title.innerHTML = `<strong>${p.name}</strong> يصوّت لـ:`;
+        const sel = document.createElement('select');
+        const def = document.createElement('option'); def.value=''; def.textContent='اختر لاعباً';
+        sel.appendChild(def);
+        state.players.forEach((q,j)=>{
+          if(i===j) return; // منع التصويت للنفس
+          const opt = document.createElement('option');
+          opt.value = j; opt.textContent = q.name;
+          sel.appendChild(opt);
+        });
+        sel.onchange = ()=>{ 
+          state.votes[i] = sel.value ? parseInt(sel.value,10) : undefined; 
+          updateVoteProgress();
+        };
+        box.append(title, sel);
+        el.voteGrid.appendChild(box);
+      });
+    }
+
+    function computeResults(){
+      // نقاط المصوّتين
+      let correctCount = 0;
+      const spyIdx = state.spyIndex;
+      const details = [];
+      Object.keys(state.votes).forEach(k=>{
+        const voter = parseInt(k,10);
+        const target = state.votes[k];
+        const ok = (target === spyIdx);
+        if(ok){
+          state.players[voter].score = (state.players[voter].score||0) + 10;
+          correctCount++;
+        }
+        details.push({voter, target, ok});
+      });
+      return {correctCount, details};
+    }
+
+    // ==== اختيارات برا السالفة ====
+    function openSpyGuess(){
+      setStep(5); showSection('sec-spy-guess');
+      const spy = state.players[state.spyIndex];
+      el.spyNameBox.textContent = `يا ${spy.name}، اختر الموضوع الصحيح من الاختيارات التالية:`;
+      // بناء خيارات متعددة: الكلمة الصحيحة + تشتيت من نفس الفئة
+      const pool = CATEGORIES[state.category].filter(w => w !== state.word);
+      const decoys = shuffle(pool).slice(0, Math.min(4, pool.length)); // حتى 4 مشتتات
+      const options = shuffle([state.word, ...decoys]);
+      state.spyOptions = options;
+
+      el.spyOptions.innerHTML = '';
+      options.forEach(opt=>{
+        const btn = document.createElement('button'); btn.className='option-btn card';
+        btn.textContent = opt;
+        btn.onclick = ()=>{
+          const correct = (opt === state.word);
+          if(correct){
+            state.players[state.spyIndex].score = (state.players[state.spyIndex].score||0) + 10;
+          }
+          showRoundResults(correct, opt);
+        };
+        el.spyOptions.appendChild(btn);
+      });
+    }
+
+    // ==== عرض النتائج ====
+    function showRoundResults(spyGuessCorrect, picked){
+      state.totalRounds++;
+      setStep(5); showSection('sec-results');
+      const spy = state.players[state.spyIndex];
+
+      el.roundSummary.innerHTML = '';
+      
+      // إشعار بالنتيجة
+      const notification = document.createElement('div');
+      notification.className = spyGuessCorrect ? 'notification success' : 'notification info';
+      notification.innerHTML = spyGuessCorrect ? 
+        '🎉 برا السالفة نجح في التخمين!' : 
+        '❌ برا السالفة لم ينجح في التخمين';
+      
+      const p1 = document.createElement('div');
+      p1.innerHTML = `الكلمة كانت: <span class="tag">${state.word}</span> — الفئة: <span class="tag">${state.category}</span>`;
+      const p2 = document.createElement('div');
+      p2.innerHTML = `برا السالفة: <strong style="color:#ffd166">${spy.name}</strong>`;
+      const p3 = document.createElement('div');
+      p3.innerHTML = `اختيار برا السالفة: <span class="tag">${picked||'—'}</span> (${spyGuessCorrect ? 'صحيح +10' : 'خطأ'})`;
+
+      el.roundSummary.append(notification, p1, p2, p3);
+
+      // لوحة النقاط
+      renderScoreBoard();
+
+      // الجولة انتهت
+      state.roundActive = false;
+      updateGameStats();
+      saveLocal();
+    }
+
+    function renderScoreBoard(){
+      el.scoreBoard.innerHTML = '';
+      const sorted = state.players.map((p,i)=>({i, ...p})).sort((a,b)=> (b.score||0)-(a.score||0));
+      sorted.forEach((item, rank)=>{
+        const box = document.createElement('div'); box.className='player';
+        if(rank === 0) box.style.border = '2px solid var(--success)'; // المركز الأول
+        
+        const pos = document.createElement('span'); 
+        pos.textContent = `#${rank + 1}`;
+        pos.style.color = rank === 0 ? 'var(--success)' : 'var(--muted)';
+        pos.style.fontWeight = '600';
+        pos.style.minWidth = '30px';
+        
+        const name = document.createElement('span'); name.textContent = item.name;
+        const score = document.createElement('span'); score.className='score'; score.textContent = `${item.score||0} نقطة`;
+        box.append(pos, name, score);
+        el.scoreBoard.appendChild(box);
+      });
+    }
+
+    // ==== أحداث ====
+    el.addPlayerBtn.onclick = ()=>{
+      const name = (el.playerName.value||'').trim();
+      if(!name) return;
+      if(state.players.some(p => p.name === name)){
+        alert('هذا الاسم موجود بالفعل!');
+        return;
+      }
+      state.players.push({name, score:0});
+      el.playerName.value='';
+      updatePlayersUI();
+    };
+
+    el.playerName.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ el.addPlayerBtn.click(); }});
+
+    el.startGameBtn.onclick = ()=>{
+      if(state.players.length < 3){
+        alert('يجب أن يكون عدد اللاعبين 3 على الأقل.');
+        return;
+      }
+      setStep(1);
+      showSection('sec-setup');
+    };
+
+    el.add4PlayersBtn.onclick = ()=>{
+      const testNames = ['أحمد', 'فاطمة', 'محمد', 'نور', 'علي', 'سارة', 'خالد', 'ليلى'];
+      const toAdd = testNames.filter(name => !state.players.some(p => p.name === name)).slice(0, 4);
+      toAdd.forEach(name => state.players.push({name, score: 0}));
+      updatePlayersUI();
+    };
+
+    el.shufflePlayersBtn.onclick = ()=>{
+      state.players = shuffle(state.players);
+      updatePlayersUI();
+    };
+
+    el.resetAllBtn.onclick = ()=>{
+      if(!confirm('سيتم مسح اللاعبين والنقاط والإعدادات. هل أنت متأكد؟')) return;
+      state.players = [];
+      state.category = Object.keys(CATEGORIES)[0];
+      state.word = null; state.spyIndex = null;
+      state.votes = {}; state.roundActive=false;
+      state.totalRounds = 0;
+      localStorage.removeItem('brasalfa_players');
+      updatePlayersUI();
+      setStep(0); showSection('sec-players');
+    };
+
+    el.categorySel.onchange = ()=>{ 
+      state.category = el.categorySel.value; 
+    };
+    
+    el.laps.onchange = ()=>{ /* validated on start */ };
+    el.startFirst.onchange = ()=>{ state.startIndex = parseInt(el.startFirst.value||'0',10) || 0; };
+    document.querySelectorAll('input[name="mode"]').forEach(r=> r.onchange = ()=>{ state.mode = r.value; });
+
+    el.backToPlayersBtn.onclick = ()=>{
+      setStep(0);
+      showSection('sec-players');
+    };
+
+    el.startRoundBtn.onclick = ()=>{
+      if(state.players.length < 3){ alert('يجب أن يكون عدد اللاعبين 3 على الأقل.'); return; }
+      startRound();
+      setStep(2);
+    };
+
+    el.goPlayBtn.onclick = ()=>{
+      setStep(3); showSection('sec-play');
+      renderPlay();
+    };
+
+    el.skipRevealBtn.onclick = ()=>{
+      // للاختبار السريع - تخطي مرحلة كشف البطاقات
+      state.revealIndex = state.players.length;
+      setStep(3); showSection('sec-play');
+      renderPlay();
+    };
+
+    el.prevTurnBtn.onclick = ()=> advanceTurn(-1);
+    el.nextTurnBtn.onclick = ()=> advanceTurn(1);
+    el.endNowBtn.onclick = ()=>{
+      if(confirm('إنهاء الجولة والانتقال للتصويت؟')) openVoting();
+    };
+
+    el.submitVotesBtn.onclick = ()=>{
+      // تحقق أن كل لاعب صوّت
+      const need = state.players.length;
+      const got = Object.keys(state.votes).length;
+      if(got < need){ alert('يجب أن يُدلي كل اللاعبين بصوتهم.'); return; }
+      // منع الفراغ
+      for(let i=0;i<state.players.length;i++){
+        if(state.votes[i] === undefined){ alert('هناك لاعب لم يختر تصويتاً.'); return; }
+      }
+      const result = computeResults();
+      // بعد التصويت، نعطي فرصة برا السالفة للتخمين
+      openSpyGuess();
+    };
+
+    el.newRoundBtn.onclick = ()=>{
+      // تدوير البداية للاعب التالي للتوازن
+      state.startIndex = (state.startIndex + 1) % state.players.length;
+      el.startFirst.value = state.startIndex.toString();
+      // إعادة فتح الإعداد
+      setStep(1); showSection('sec-setup');
+    };
+
+    el.resetScoresBtn.onclick = ()=>{
+      if(!confirm('تأكيد تصفير النقاط للجميع؟')) return;
+      state.players = state.players.map(p=> ({name:p.name, score:0}));
+      state.totalRounds = 0;
+      renderScoreBoard();
+      updateGameStats();
+      saveLocal();
+    };
+
+    // ==== تهيئة ====
+    function init(){
+      loadLocal();
+      updatePlayersUI();
+      setStep(0); showSection('sec-players');
+    }
+
+    init();
+  </script>
+</body>
+</html>
