@@ -809,7 +809,7 @@
     };
 
     el.add4PlayersBtn.onclick = ()=>{
-      const testNames = ['أحمد', 'فاطمة', 'محمد', 'نور', 'علي', 'سارة', 'خالد', 'ليلى'];
+      const testNames = ['أحمد', 'يمنى', 'تسنيم', 'نور', 'علي', 'سارة', 'خالد', 'ليلى'];
       const toAdd = testNames.filter(name => !state.players.some(p => p.name === name)).slice(0, 4);
       toAdd.forEach(name => state.players.push({name, score: 0}));
       updatePlayersUI();
