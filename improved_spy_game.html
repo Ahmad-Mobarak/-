@@ -23,7 +23,9 @@
     .card{
       background:linear-gradient(180deg, #171c2b, #151a28); border:1px solid #24304b;
       border-radius:14px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25);
+      transition:all 0.3s ease;
     }
+    .card.show{opacity:1; transform:translateY(0)}
     label{font-size:.92rem; color:#c9d2ea}
     input, select, button, textarea{
       background:#0e1424; color:var(--text); border:1px solid #263350;
@@ -67,7 +69,7 @@
     .card-cta{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:20px; padding-top:15px; border-top:1px solid #24304b}
     .vote-grid{display:grid; gap:10px; grid-template-columns:repeat(auto-fit, minmax(240px,1fr))}
     .options{display:grid; gap:10px; grid-template-columns:repeat(auto-fit, minmax(160px,1fr))}
-    .option-btn{padding:12px; text-align:center; transition:all 0.2s}
+    .option-btn{padding:14px; text-align:center; transition:all 0.2s; font-size:1rem}
     .option-btn.selected{background:var(--accent); color:#000; border-color:var(--accent); transform:scale(1.05)}
     .option-btn:hover{transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.2)}
     .sep{height:1px; background:#24304b; margin:10px 0}
@@ -101,6 +103,18 @@
     .turn-player-name{font-size:1.3rem; font-weight:700; color:#d6fff0}
     
     .voting-summary{margin:15px 0; padding:10px; background:#0a1a33; border-radius:8px; border:1px solid #2c4a60}
+    
+    /* تفاصيل التصويت */
+    .vote-result{margin:5px 0; padding:6px 10px; border-radius:8px; background:#111a33; display:flex; justify-content:space-between; align-items:center}
+    .vote-result.correct{border:1px solid var(--success); color:var(--success)}
+    .vote-result.wrong{border:1px solid var(--danger); color:var(--danger)}
+    
+    .vote-bar{height:8px; background:#24304b; border-radius:4px; overflow:hidden; margin-top:4px}
+    .vote-fill{height:100%; background:var(--accent)}
+    
+    @media(max-width:600px){
+      .option-btn{font-size:1.1rem; padding:18px}
+    }
   </style>
 </head>
 <body>
@@ -297,6 +311,7 @@
     <section id="sec-results" class="card grid hidden">
       <h2>النتائج والنقاط</h2>
       <div id="roundSummary" class="grid"></div>
+      <div id="voteDetails"></div>
       <div class="sep"></div>
       <h3>لوحة النقاط</h3>
       <div id="scoreBoard" class="players"></div>
@@ -403,6 +418,7 @@
       // Results
       secResults: document.getElementById('sec-results'),
       roundSummary: document.getElementById('roundSummary'),
+      voteDetails: document.getElementById('voteDetails'),
       scoreBoard: document.getElementById('scoreBoard'),
       newRoundBtn: document.getElementById('newRoundBtn'),
       resetScoresBtn: document.getElementById('resetScoresBtn')
@@ -410,6 +426,7 @@
 
     // ==== أدوات ====
     const rng = (n) => Math.floor(Math.random()*n);
+    
     const shuffle = (arr) => {
       const a = arr.slice();
       for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
@@ -446,8 +463,11 @@
     }
 
     function showSection(secId){
-      [el.secPlayers, el.secSetup, el.secReveal, el.secPlay, el.secVote, el.secSpyGuess, el.secResults].forEach(s=>s.classList.add('hidden'));
-      document.getElementById(secId).classList.remove('hidden');
+      [el.secPlayers, el.secSetup, el.secReveal, el.secPlay, el.secVote, el.secSpyGuess, el.secResults]
+        .forEach(s=>{s.classList.add('hidden'); s.classList.remove('show');});
+      const sec = document.getElementById(secId);
+      sec.classList.remove('hidden');
+      setTimeout(()=>sec.classList.add('show'),10);
     }
 
     function updateGameStats(){
@@ -757,13 +777,39 @@
         '❌ برا السالفة لم ينجح في التخمين';
       
       const p1 = document.createElement('div');
-      p1.innerHTML = `الكلمة كانت: <span class="tag">${state.word}</span> — الفئة: <span class="tag">${state.category}</span>`;
+      p1.innerHTML = `الكلمة: <span class="tag">${state.word}</span> — الفئة: <span class="tag">${state.category}</span>`;
       const p2 = document.createElement('div');
       p2.innerHTML = `برا السالفة: <strong style="color:#ffd166">${spy.name}</strong>`;
       const p3 = document.createElement('div');
-      p3.innerHTML = `اختيار برا السالفة: <span class="tag">${picked||'—'}</span> (${spyGuessCorrect ? 'صحيح +10' : 'خطأ'})`;
-
+      p3.innerHTML = `اختيار برا السالفة: <span class="tag">${picked||'—'}</span>`;
       el.roundSummary.append(notification, p1, p2, p3);
+
+      // render detailed votes
+      const detailsBox = el.voteDetails;
+      detailsBox.innerHTML = '<h3>تفاصيل التصويت</h3>';
+      const counts = new Array(state.players.length).fill(0);
+      Object.entries(state.votes).forEach(([voterIdx, targetIdx])=>{
+        counts[targetIdx]++;
+        const voter = state.players[voterIdx];
+        const target = state.players[targetIdx];
+        const correct = (targetIdx == state.spyIndex);
+        const row = document.createElement('div');
+        row.className = 'vote-result ' + (correct? 'correct':'wrong');
+        row.innerHTML = `<span>${voter.name} → ${target.name}</span><span>${correct? '✅':'❌'}</span>`;
+        detailsBox.append(row);
+      });
+
+      // vote distribution bars
+      detailsBox.innerHTML += '<h3>توزيع الأصوات</h3>';
+      state.players.forEach((p,i)=>{
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `<div>${p.name}</div>`;
+        const bar = document.createElement('div'); bar.className='vote-bar';
+        const fill = document.createElement('div'); fill.className='vote-fill';
+        fill.style.width = (counts[i]/state.players.length*100)+'%';
+        bar.appendChild(fill); wrap.appendChild(bar);
+        detailsBox.appendChild(wrap);
+      });
 
       // لوحة النقاط
       renderScoreBoard();
